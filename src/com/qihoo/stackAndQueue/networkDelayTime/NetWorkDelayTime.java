@@ -13,38 +13,39 @@ public class NetWorkDelayTime {
 }
 
 class Solution {
+    private Map<Integer, Integer> distMap;
+    private Map<Integer, List<int[]>> timesMap;
+
     public int networkDelayTime(int[][] times, int N, int K) {
-        boolean[] visited = new boolean[N + 1];
-        int visitNum = 0;
-        int delay = 0;
-        Queue<Integer> queue = new LinkedList<>();
-        Map<Integer, List<Map.Entry<Integer, Integer>>> timesMap = new HashMap<>();
-        for (int[] time : times) {
-            Map.Entry<Integer, Integer> tPair = Map.entry(time[1], time[2]);
-            List<Map.Entry<Integer, Integer>> temp = timesMap.getOrDefault(time[0], new LinkedList<>());
-            temp.add(tPair);
-            timesMap.put(time[0], temp);
+        timesMap = new HashMap<>();
+        for (int[] edge : times) {
+            timesMap.computeIfAbsent(edge[0], k -> new LinkedList<>());
+            timesMap.get(edge[0]).add(new int[]{edge[1], edge[2]});
         }
 
-        queue.add(K);
-        visited[K] = true;
-        visitNum++;
-        while (!queue.isEmpty()) {
-            int node = queue.poll();
-            List<Map.Entry<Integer, Integer>> next = timesMap.get(node);
-            if (next == null) continue;
-            int nodeDelay = 0;
-            for (Map.Entry<Integer, Integer> n : next) {
-                if (!visited[n.getKey()]) {
-                    queue.add(n.getKey());
-                    visited[n.getKey()] = true;
-                    visitNum++;
-                    if (n.getValue() > nodeDelay) nodeDelay = n.getValue();
-                }
-            }
-            delay += nodeDelay;
+        for (Integer node : timesMap.keySet()) {
+            timesMap.get(node).sort(Comparator.comparingInt(a -> a[0]));
         }
 
-        return visitNum == N ? delay : -1;
+        distMap = new HashMap<>();
+        for (int i = 1; i <= N; i++) {
+            distMap.put(i, Integer.MAX_VALUE);
+        }
+        dfs(K, 0);
+
+        int ans = Integer.MIN_VALUE;
+        for (int curr: distMap.values()) {
+            if (curr == Integer.MAX_VALUE) return -1;
+            ans = Math.max(ans, curr);
+        }
+
+        return ans;
+    }
+
+    private void dfs(int node, int elapse) {
+        if (elapse >= distMap.get(node)) return;
+        distMap.put(node, elapse);
+        if (timesMap.containsKey(node))
+            for (int[] edge : timesMap.get(node)) dfs(edge[0], elapse + edge[1]);
     }
 }
